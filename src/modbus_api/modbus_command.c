@@ -51,6 +51,10 @@ static bool modbus_command_transceiver(uart_port_t uart_port, uint8_t *tx_data, 
 static bool modbus_command_transceiver(uart_port_t uart_port, uint8_t *tx_data, uint16_t tx_size, uint8_t *rx_data, uint16_t max_size, uint16_t *rx_size)
 {
     *rx_size = 0;
+    
+    /* Flush uart buffer before */
+    uart_flush(uart_port);
+
     /* Write data to the UART */
     int rc = uart_write_bytes(uart_port, (const char*)tx_data, tx_size);
     uart_wait_tx_done(uart_port, -1);
@@ -85,7 +89,7 @@ bool modbus_command_get_electric_registers(uint8_t slave_id, uint16_t address, u
     crc16 = crc16_modbus(command, 6);
     command[6] = HI_UINT16(crc16);
     command[7] = LO_UINT16(crc16);
-
+    
     /* Send and receive data */
     uint8_t max_size = RAW_LEN(num_reg) + 5;    /* 1 Address + 1 Function + 1 Byte count + 2 CRC */
     if(modbus_command_transceiver(MODBUS_ELEC_PORT_NUM, command, 8, rx_data, max_size, &rx_size))

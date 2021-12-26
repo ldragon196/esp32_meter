@@ -19,6 +19,7 @@
 /*                     EXPORTED TYPES and DEFINITIONS                         */
 /******************************************************************************/
 
+#define FLAG_NONE                                     0x00
 #define REPORT                                        0x01
 
 /*****************************************************************************************************************************
@@ -26,7 +27,7 @@
 *****************************************************************************************************************************/
 #define MODBUS_ELEC_INPUT_REGS                                                                                                  \
 XTABLE_ITEM(MB_POWER_RECEIVE_WH,                 power_receive_wh,              int32_t,          0x0000,    2,     REPORT )    \
-XTABLE_ITEM(MB_POWER_TRANSMISS_WH,               power_transmiss_wh,            int32_t,          0x0002,    2,     REPORT )    \
+XTABLE_ITEM(MB_POWER_TRANSMISS_WH,               power_transmiss_wh,            int32_t,          0x0002,    2,     FLAG_NONE ) \
 XTABLE_ITEM(MB_WATT_RECEIVE,                     watt_receive,                  int32_t,          0x0004,    2,     REPORT )    \
 XTABLE_ITEM(MB_WATT_TRANSMISS,                   watt_transmiss,                int32_t,          0x0006,    2,     REPORT )    \
 XTABLE_ITEM(MB_POWER_GROUND_RECV_WARH1,          power_ground_recv_warh1,       int32_t,          0x0008,    2,     REPORT )    \

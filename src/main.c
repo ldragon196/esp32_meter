@@ -57,9 +57,19 @@ void app_main()
     /* Modbus master init */
     modbus_api_init();
 
+    modbus_data_t modbus_data;
     while(1)
     {
+        if(modbus_api_queue_get(&modbus_data) == ESP_OK)
+        {
+            char *message = modbus_api_data_to_json(&modbus_data);
+            if(message != NULL)
+            {
+                ESP_LOGI(TAG, "-------------- %s", message);
+                free(message);
+            }
+        }
         ESP_LOGI(TAG, "Free heap %u", esp_get_minimum_free_heap_size());
-        vTaskDelay(5000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_RATE_MS);
     }
 }

@@ -4,6 +4,7 @@
         "mbcontroller.h": "c",
         "modbus_api.h": "c",
         "config.h": "c",
-        "thread": "cpp"
+        "thread": "cpp",
+        "functional": "c"
     }
 }
