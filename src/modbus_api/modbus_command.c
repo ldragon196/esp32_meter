@@ -147,7 +147,6 @@ bool modbus_command_get_elec_registers(uint8_t *slave_id, uint16_t address, uint
     return false;
 }
 
-
 /******************************************************************************/
 
 /*!

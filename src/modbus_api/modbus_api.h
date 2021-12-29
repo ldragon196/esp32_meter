@@ -76,6 +76,13 @@ esp_err_t modbus_api_queue_get(modbus_data_t *modbus_data);
 esp_err_t modbus_api_queue_put(modbus_data_t *modbus_data);
 
 /*!
+ * @brief  Set slave info
+ * @param  Slave address and number of slaves
+ * @retval None
+ */
+void modbus_api_set_slave(uint8_t *slave_id, uint8_t num_slave);
+
+/*!
  * @brief  Modbus in master mode initialization
  * @param  None
  * @retval None

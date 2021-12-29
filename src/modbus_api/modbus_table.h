@@ -84,8 +84,7 @@ XTABLE_ITEM(MB_ENERGY_CMD,                       energy,                        
 XTABLE_ITEM(MB_SHOW_MODE_CMD,                    show_mode,                     mode_t,           0x1477,    3,     REPORT )    \
 XTABLE_ITEM(MB_VERSION_CMD,                      version,                       uint8_t,          0x2350,    3,     REPORT )    \
 XTABLE_ITEM(MB_CONSTANT_CMD,                     constant,                      uint8_t,          0xF363,    3,     REPORT )    \
-XTABLE_ITEM(MB_DAY_TABLE_CMD,                    constant,                      uint8_t,          0xF363,    3,     REPORT )    \
-XTABLE_ITEM(MB_READ_ADDRESS_CMD,                 address,                       uint8_t*,         0xF367,    6,     REPORT )
+XTABLE_ITEM(MB_DAY_TABLE_CMD,                    constant,                      uint8_t,          0xF363,    3,     REPORT )
 
 typedef uint16_t modbus_elec_cmd_id;
 enum {

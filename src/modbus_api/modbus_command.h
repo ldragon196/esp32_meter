@@ -29,6 +29,7 @@
 /*  */
 #define MODBUS_START_BYTE                             0x68
 #define MODBUS_END_BYTE                               0x16
+#define MODBUS_DATA_ADD_BYTE                          0x33
 
 #define MODBUS_READ_REQUEST_BYTE                      0x01
 #define MODBUS_READ_RESPONSE_BYTE                     0x81
