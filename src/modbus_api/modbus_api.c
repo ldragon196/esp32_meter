@@ -21,7 +21,7 @@
 /******************************************************************************/
 
 typedef struct {
-    modbus_elec_reg_id id;
+    modbus_reg_id id;
     uint16_t address;
     uint16_t size;
     uint8_t flag;
@@ -33,19 +33,28 @@ typedef struct {
 /******************************************************************************/
 
 static const char* TAG = "MODBUS";
-static uint32_t elec_slave_mask = MODBUS_ELEC_SLAVE_MASK;
-// static uint32_t water_slave_mask = MODBUS_WATER_SLAVE_MASK;
+const char *meter_type[METER_COUNT] = {"electric", "water"};
 
 static QueueHandle_t modbus_command_queue;
+static uint32_t slave_count = MODBUS_SLAVE_COUNT;
 
-/* Electric meter registers info */
-const modbus_reg_info_t elec_reg_info[] = {
+#ifdef ELECTRIC_METER_USED
+/* Electric meter*/
+static uint8_t slave_address[MAX_SLAVE_ID][6] = MODBUS_SLAVE_ID_DEFAULT;
+const modbus_reg_info_t modbus_reg_info[] = {
 #define XTABLE_ITEM(id, name, type, address, size, flag) { id, address, size, flag, #name },
-    MODBUS_ELEC_INPUT_REGS
+    MODBUS_ELECTRIC_CMD
 #undef XTABLE_ITEM
 };
-
-const char *meter_type[METER_COUNT] = {"electric", "water"};
+#else
+/* Water meter */
+static uint8_t slave_address[MAX_SLAVE_ID] = MODBUS_SLAVE_ID_DEFAULT;
+const modbus_reg_info_t modbus_reg_info[] = {
+#define XTABLE_ITEM(id, name, type, address, size, flag) { id, address, size, flag, #name },
+    MODBUS_WATER_INPUT_REGS
+#undef XTABLE_ITEM
+};
+#endif
 
 /******************************************************************************/
 /*                              EXPORTED DATA                                 */
@@ -57,7 +66,7 @@ const char *meter_type[METER_COUNT] = {"electric", "water"};
 /*                                FUNCTIONS                                   */
 /******************************************************************************/
 
-static uint16_t modbus_api_get_num_reg(modbus_elec_reg_id start, modbus_elec_reg_id stop);
+uint16_t modbus_api_get_num_reg(modbus_reg_id start, modbus_reg_id stop);
 static void modbus_api_task(void *arg);
 static void modbus_api_add_reg_data_to_json(cJSON* root, const modbus_reg_info_t *table, modbus_data_t *modbus_data);
 
@@ -66,12 +75,12 @@ static void modbus_api_add_reg_data_to_json(cJSON* root, const modbus_reg_info_t
 /*!
  * @brief  Get number of register from "start" register to "stop" register
  */
-static uint16_t modbus_api_get_num_reg(modbus_elec_reg_id start, modbus_elec_reg_id stop)
+uint16_t modbus_api_get_num_reg(modbus_reg_id start, modbus_reg_id stop)
 {
     uint16_t ret_val = 0;
-    for(modbus_elec_reg_id i = start; i <= stop; i++)
+    for(modbus_reg_id i = start; i <= stop; i++)
     {
-        ret_val += elec_reg_info[i].size;
+        ret_val += modbus_reg_info[i].size;
     }
     return ret_val;
 }
@@ -79,39 +88,82 @@ static uint16_t modbus_api_get_num_reg(modbus_elec_reg_id start, modbus_elec_reg
 /*!
  * @brief  Task for get data from slave
  */
+#ifdef ELECTRIC_METER_USED
 static void modbus_api_task(void *arg)
 {
-    uint32_t i;
+    uint32_t i, j, index;
     bool result;
     modbus_data_t modbus_data;
-    uint16_t num_elec_reg;
-    
+    uint8_t buffer[MODBUS_COMMAND_MAX_SIZE];
+
     while(1)
     {
         /* Read data from electric meter */
         modbus_data.meter = ELECTRIC_METER;
-        modbus_data.start = MB_POWER_RECEIVE_WH;
-        modbus_data.stop = MB_POWER_TRANSMISS_WH;
-        num_elec_reg = modbus_api_get_num_reg(modbus_data.start, modbus_data.stop);    /* Read from reg_1 to reg_2 */
-        for(i = 0; i < 32; i++)
+        modbus_data.start = MB_DATE_CMD;
+        modbus_data.stop = MB_DATE_CMD;
+
+        memset(&modbus_data, 0, sizeof(modbus_data));
+        for(i = 0; i < slave_count; i++)
         {
-            if(((elec_slave_mask >> i) & 0x00000001) == 0x1)
+            index = 0;    /* Index of data */
+            result = false;
+            for(j = modbus_data.start; j <= modbus_data.stop; j++)
             {
-                /* Read from each slave */
-                result = modbus_command_get_electric_registers(i, elec_reg_info[modbus_data.start].address, num_elec_reg, modbus_data.data);
-                if(result)
+                /* Read data from start to stop */
+                result = modbus_command_get_elec_registers(slave_address[i], modbus_reg_info[j].address, buffer, modbus_reg_info[j].size);
+                if(!result)
                 {
-                    /* Put to queue */
-                    ESP_LOGI(TAG, "Receive response from slave %d", i);
-                    modbus_data.slave_id = i;
-                    modbus_api_queue_put(&modbus_data);
-                    vTaskDelay(MODBUS_RX_TIMEOUT_MS / portTICK_RATE_MS);    /* Delay before next*/
+                    break;
                 }
+                memcpy(&modbus_data.data[index], buffer, modbus_reg_info[j].size);
+                index += modbus_reg_info[j].size;
+                vTaskDelay(100 / portTICK_RATE_MS);    /* Delay before next*/
+            }
+            /* If read all register success, put to queue */
+            if(result)
+            {
+                ESP_LOGI(TAG, "Receive response from slave"ADDRSTR, ADDR2STR(slave_address[i]));
+                modbus_data.slave_id = i;
+                modbus_api_queue_put(&modbus_data);
+                vTaskDelay(MODBUS_RX_TIMEOUT_MS / portTICK_RATE_MS);    /* Delay before next*/
             }
         }
         vTaskDelay(MODBUS_TIME_BETWEEN_POLLING_MS / portTICK_RATE_MS);
     }
 }
+#else
+static void modbus_api_task(void *arg)
+{
+    uint32_t i;
+    bool result;
+    modbus_data_t modbus_data;
+    uint16_t num_reg;
+    
+    while(1)
+    {
+        /* Read data from water meter */
+        modbus_data.meter = WATER_METER;
+        modbus_data.start = MB_POWER_RECEIVE_WH;
+        modbus_data.stop = MB_POWER_RECEIVE_WH;
+        num_reg = modbus_api_get_num_reg(modbus_data.start, modbus_data.stop);    /* Read from reg_1 to reg_2 */
+        for(i = 0; i < slave_count; i++)
+        {
+            /* Read from each slave */
+            result = modbus_command_get_water_registers(slave_address[i], modbus_reg_info[modbus_data.start].address, num_reg, modbus_data.data);
+            if(result)
+            {
+                /* Put to queue */
+                ESP_LOGI(TAG, "Receive response from slave %d", slave_address[i]);
+                modbus_data.slave_id = slave_address[i];
+                modbus_api_queue_put(&modbus_data);
+                vTaskDelay(MODBUS_RX_TIMEOUT_MS / portTICK_RATE_MS);    /* Delay before next*/
+            }
+        }
+        vTaskDelay(MODBUS_TIME_BETWEEN_POLLING_MS / portTICK_RATE_MS);
+    }
+}
+#endif
 
 /******************************************************************************/
 
@@ -183,7 +235,7 @@ void modbus_api_init(void)
  */
 static void modbus_api_add_reg_data_to_json(cJSON* root, const modbus_reg_info_t *table, modbus_data_t *modbus_data)
 {
-    modbus_elec_reg_id i;
+    uint16_t i;
     uint32_t *value = (uint32_t*) &modbus_data->data[3];    /* Packet: slave_id - function id - byte count - data0 - data1... */
     char addr_str[8];
 
@@ -219,10 +271,7 @@ char* modbus_api_data_to_json(modbus_data_t *modbus_data)
     cJSON* regs = cJSON_AddArrayToObject(root, JSON_REG_KEY);
     if(regs != NULL)
     {
-        if(modbus_data->meter == ELECTRIC_METER)
-        {
-            modbus_api_add_reg_data_to_json(regs, elec_reg_info, modbus_data);
-        }
+        modbus_api_add_reg_data_to_json(regs, modbus_reg_info, modbus_data);
     }
 
     /* Print json to string */

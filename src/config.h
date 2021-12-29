@@ -27,32 +27,41 @@
 /*                     EXPORTED TYPES and DEFINITIONS                         */
 /******************************************************************************/
 
+#ifndef ELECTRIC_METER_USED
+#define ELECTRIC_METER_USED
+#endif
+
 /* Info */
 #define FIRMWARE_VERSION                              "1.0.0"
 #define HARDWARE_VERSION                              "1.0.0"
 
 /* Modbus */
+#define MAX_SLAVE_ID                                  32
 #define MODBUS_RX_BUFFER_SIZE                         1024
 #define MODBUS_COMMAND_MAX_SIZE                       128
 #define MODBUS_QUEUE_SIZE                             128
-#define MODBUS_RX_TIMEOUT_MS                          100
-#define MODBUS_QUEUE_TIMEOUT_MS                       20
+#define MODBUS_QUEUE_TIMEOUT_MS                       50
+
 #define MODBUS_TIME_BETWEEN_POLLING_MS                5000
+#define MODBUS_RX_TIMEOUT_MS                          1000
 
-#define MODBUS_ELEC_PORT_NUM                          UART_NUM_2
-#define MODBUS_ELEC_BAUDRATE                          9600
-#define MODBUS_ELEC_PARITY                            UART_PARITY_DISABLE
-#define MODBUS_ELEC_UART_TXD                          23
-#define MODBUS_ELEC_UART_RXD                          22
-
-#define MODBUS_WATER_PORT_NUM                         UART_NUM_1
-#define MODBUS_WATER_BAUDRATE                         1200
-#define MODBUS_WATER_PARITY                           UART_PARITY_EVEN
-#define MODBUS_WATER_UART_TXD                         18
-#define MODBUS_WATER_UART_RXD                         17
-
-#define MODBUS_ELEC_SLAVE_MASK                        0xFFFFFFFF
-#define MODBUS_WATER_SLAVE_MASK                       0xFFFFFFFF
+#ifdef ELECTRIC_METER_USED
+#define MODBUS_PORT_NUM                               UART_NUM_2
+#define MODBUS_BAUDRATE                               1200
+#define MODBUS_PARITY                                 UART_PARITY_EVEN
+#define MODBUS_UART_TXD                               23
+#define MODBUS_UART_RXD                               22
+#define MODBUS_SLAVE_COUNT                            2
+#define MODBUS_SLAVE_ID_DEFAULT                       {{1, 2, 3, 4, 5, 6}, {11, 12, 13, 14, 15, 16}, }
+#else
+#define MODBUS_PORT_NUM                               UART_NUM_2
+#define MODBUS_BAUDRATE                               9600
+#define MODBUS_PARITY                                 UART_PARITY_DISABLE
+#define MODBUS_UART_TXD                               23
+#define MODBUS_UART_RXD                               22
+#define MODBUS_SLAVE_COUNT                            2
+#define MODBUS_SLAVE_ID_DEFAULT                       {1, 2, }
+#endif
 
 /* JSON */
 #define JSON_METER_TYPE_KEY                           "meter"

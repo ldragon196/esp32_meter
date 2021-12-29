@@ -5,6 +5,11 @@
         "modbus_api.h": "c",
         "config.h": "c",
         "thread": "cpp",
-        "functional": "c"
+        "functional": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "typeinfo": "c"
     }
 }

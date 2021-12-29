@@ -21,6 +21,11 @@
 /*                     EXPORTED TYPES and DEFINITIONS                         */
 /******************************************************************************/
 
+#if (MAX_SLAVE_ID > 32)
+#undef MAX_SLAVE_ID
+#define MAX_SLAVE_ID                                  32
+#endif
+
 typedef uint8_t meter_type_t;
 enum {
     ELECTRIC_METER = 0,
@@ -32,8 +37,8 @@ typedef struct
 {
     meter_type_t meter;
     uint8_t slave_id;
-    modbus_elec_reg_id start;
-    modbus_elec_reg_id stop;
+    modbus_reg_id start;
+    modbus_reg_id stop;
     uint8_t data[MODBUS_COMMAND_MAX_SIZE];
 } modbus_data_t;
 
