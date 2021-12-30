@@ -13,6 +13,8 @@
 #include <nvs_flash.h>
 #include "config.h"
 #include "modbus_api/modbus_api.h"
+#include "wifi_lib/wifi_lib.h"
+#include "mqtt_api/mqtt_api.h"
 
 /******************************************************************************/
 /*                     EXPORTED TYPES and DEFINITIONS                         */
@@ -40,6 +42,14 @@ static const char* TAG = "MAIN";
 
 /******************************************************************************/
 
+/*!
+ * @brief  Hanle message received from mqtt
+ */
+void main_mqtt_message_handle(char* message, uint32_t length)
+{
+    ESP_LOGI(TAG, "Received message");
+}
+
 /**
  * @brief  Main app
  */
@@ -54,12 +64,20 @@ void app_main()
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "Power up! Firmware version %s, hardware version %s", FIRMWARE_VERSION, HARDWARE_VERSION);
     
+    /* Start wifi station mode */
+    wifi_lib_init_sta();
+
+    /* MQTT initialization */
+    mqtt_register_callback("Config", main_mqtt_message_handle);
+    mqtt_api_init();
+
     /* Modbus master init */
     modbus_api_init();
 
     modbus_data_t modbus_data;
     while(1)
     {
+        /* Check modbus queue */
         if(modbus_api_queue_get(&modbus_data) == ESP_OK)
         {
             char *message = modbus_api_data_to_json(&modbus_data);
@@ -69,6 +87,10 @@ void app_main()
                 free(message);
             }
         }
+
+        /* Send heartbeat */
+        mqtt_api_publish("Heartbeat", "Hello world!", MQTT_AUTO_LENGTH);
+
         ESP_LOGI(TAG, "Free heap %u", esp_get_minimum_free_heap_size());
         vTaskDelay(1000 / portTICK_RATE_MS);
     }

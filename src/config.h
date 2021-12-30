@@ -21,7 +21,12 @@
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/event_groups.h>
 #include <freertos/queue.h>
+#include <esp_event.h>
+#include <esp_wifi.h>
+#include <esp_err.h>
+#include <esp_log.h>
 
 /******************************************************************************/
 /*                     EXPORTED TYPES and DEFINITIONS                         */
@@ -34,6 +39,13 @@
 /* Info */
 #define FIRMWARE_VERSION                              "1.0.0"
 #define HARDWARE_VERSION                              "1.0.0"
+
+/* Wifi config */
+#define WIFI_SSID                                     "A501"
+#define WIFI_PASSWORD                                 "1133557799"
+#define WIFI_SSID_MAX_LENGTH                          32
+#define WIFI_PASSWORD_MAX_LENGTH                      64
+#define WIFI_TIME_RETRY_CONNECT_MS                    3000
 
 /* Modbus */
 #define MAX_SLAVE_ID                                  32
@@ -63,6 +75,18 @@
 #define MODBUS_SLAVE_ID_DEFAULT                       {1, 2, }
 #endif
 
+/* MQTT */
+#define MQTT_DATA_MAX_LENGTH                          1024
+#define MQTT_TOPIC_MAX_LENGTH                         128
+#define MQTT_MAX_SUBCRIBE_TOPIC                       8
+#define MQTT_CLIENT_ID_LENGTH                         32
+#define MQTT_MESSAGE_QUEUE_SIZE                       4
+#define MQTT_QUEUE_MAX_DELAY_MS                       200
+
+#define MQTT_BROKER_URI                              "mqtts://broker.emqx.io:8883"
+#define MQTT_USERNAME                                "admin"
+#define MQTT_PASSWORD                                "123456"
+
 /* JSON */
 #define JSON_METER_TYPE_KEY                           "meter"
 #define JSON_SLAVE_ID_KEY                             "slave"
@@ -75,6 +99,10 @@
 #define MODBUS_TASK_NAME                              "modbus"
 #define MODBUS_TASK_SIZE                              4096
 #define MODBUS_TASK_PRIORITY                          3
+
+#define MQTT_TASK_NAME                                "MQTT"
+#define MQTT_TASK_SIZE                                4096
+#define MQTT_TASK_PRIORITY                            4
 
 /******************************************************************************/
 /*                              PRIVATE DATA                                  */
